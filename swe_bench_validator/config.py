@@ -21,6 +21,11 @@ class ValidatorConfig:
     # SWE-bench dataset settings
     swe_bench_tasks: str = "swe-bench"
     
+    # Docker namespace for pulling instance images
+    # Set to None to build locally, or to a Docker Hub username to pull pre-built images
+    # Can be overridden via DOCKER_NAMESPACE environment variable
+    docker_namespace: Optional[str] = None  # None = build locally, "sobolav" = pull from Docker Hub
+    
     # Error handling
     continue_on_error: bool = False  # Stop on first error or continue
     

@@ -95,10 +95,10 @@ jobs:
           echo "   Subsequent runs will be faster as images are cached."
           echo ""
           
-          # Run validator
+          # Run validator with Docker Hub namespace for pre-built images
           # Exit code 1 = validation failed (expected for invalid data points)
           # Exit code 0 = validation passed (expected for valid data points)
-          uv run python -m swe_bench_validator $CHANGED_FILES --verbose
+          DOCKER_NAMESPACE=sobolav uv run python -m swe_bench_validator $CHANGED_FILES --verbose
 
       - name: Report validation results
         if: always() && steps.changed-files.outputs.changed == 'true'

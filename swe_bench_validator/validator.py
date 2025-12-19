@@ -153,6 +153,10 @@ class DataPointValidator:
             config: Validator configuration. Uses default if not provided.
         """
         self.config = config or DEFAULT_CONFIG
+        # Override docker_namespace from environment variable if set
+        import os
+        if os.getenv("DOCKER_NAMESPACE"):
+            self.config.docker_namespace = os.getenv("DOCKER_NAMESPACE")
         self.log_dir = Path(self.config.log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -440,10 +444,11 @@ class DataPointValidator:
                 # Convert to prediction format
                 prediction_dict = self.convert_to_prediction_format(data_point)
                 
-                # Format predictions dict: {instance_id: {model_name_or_path: ..., model_patch: ...}}
-                # run_instances expects predictions to be dicts, not strings
+                # Format predictions dict: {instance_id: {instance_id: ..., model_name_or_path: ..., model_patch: ...}}
+                # run_instances expects predictions to be dicts, and get_eval_report needs instance_id in the prediction
                 predictions = {
                     instance_id: {
+                        "instance_id": instance_id,  # Required by get_eval_report
                         "model_name_or_path": "golden",
                         "model_patch": prediction_dict["patch"],
                     }
@@ -451,19 +456,27 @@ class DataPointValidator:
                 
                 # Call run_instances with correct signature
                 # run_instances expects: predictions (dict), instances (list), and other params
-                run_id = f"validation-{instance_id}"
+                # Use a unique run_id based on file path hash to avoid reusing cached results
+                import hashlib
+                file_hash = hashlib.md5(str(file_path).encode()).hexdigest()[:8]
+                run_id = f"validation-{instance_id}-{file_hash}"
                 model_name = "golden"  # Match the model_name_or_path in predictions
+                
+                # SWE-bench limitation: Instance images must be pre-built
+                # Even locally, SWE-bench tries to pull instance images from Docker Hub
+                # It does NOT build them from environment images automatically
+                # This is a SWE-bench design decision - instance images are expected to be pre-built
                 try:
                     run_evaluation(
                         predictions=predictions,
                         instances=[instance],
                         cache_level="none",  # Don't cache for validation
-                        clean=False,
-                        force_rebuild=True,  # Build images locally instead of pulling
+                        clean=True,  # Clean up old containers to avoid name conflicts
+                        force_rebuild=True,  # Attempt to rebuild if needed (but instance images still need to exist)
                         max_workers=1,  # Single instance validation
                         run_id=run_id,
                         timeout=self.config.default_timeout,
-                        namespace=self.config.swe_bench_tasks,
+                        namespace=self.config.docker_namespace,  # None = build locally, "sobolav" = pull from Docker Hub
                     )
                 except Exception as run_error:
                     # run_instances might fail, but we still want to check if logs were written
@@ -580,6 +593,19 @@ class DataPointValidator:
                     try:
                         with open(run_instance_log, 'r') as f:
                             log_content = f.read()
+                            # Check for container name conflicts (409 Conflict)
+                            if "409 Client Error" in log_content and "Conflict" in log_content and "container name" in log_content.lower():
+                                # Container name conflict - old container exists
+                                raise ExecutionError(
+                                    f"Container name conflict for {instance_id}.\n"
+                                    f"A container with the same name already exists from a previous run.\n"
+                                    f"This usually happens when a previous validation run was interrupted.\n\n"
+                                    f"To fix this:\n"
+                                    f"  1. Remove the old container manually:\n"
+                                    f"     docker rm -f $(docker ps -a | grep '{instance_id}' | awk '{{print $1}}')\n"
+                                    f"  2. Or set clean=True in run_evaluation (already enabled in validator)\n"
+                                    f"  3. Check logs at: {run_instance_log}\n"
+                                )
                             # Check for Docker build errors
                             if "BuildImageError" in log_content or "Error building image" in log_content:
                                 build_failed = True
@@ -617,18 +643,48 @@ class DataPointValidator:
                         f"The validator is working correctly - this is a SWE-bench infrastructure requirement."
                     )
                 
-                # Get evaluation report
-                eval_report = get_eval_report(
-                    test_spec=test_spec,
-                    prediction=eval_prediction,
-                    test_log_path=test_log_path,
-                    include_tests_status=True,
-                )
-                
-                # Convert to format expected by validate_evaluation_results
-                # get_eval_report returns a dict with keys like "tests" containing test results
-                # Format: {instance_id: {test_name: {status: "PASS"/"FAIL", ...}}}
-                test_results = eval_report.get("tests", {})
+                # Get evaluation report from report.json (created by run_evaluation)
+                report_path = os.path.join(log_base_dir, run_id, model_name, instance_id, "report.json")
+                if os.path.exists(report_path):
+                    import json
+                    with open(report_path, 'r') as f:
+                        eval_report = json.load(f)
+                    # eval_report format: {instance_id: {patch_exists: True, resolved: True, tests_status: {...}}}
+                    instance_report = eval_report.get(instance_id, {})
+                    tests_status = instance_report.get("tests_status", {})
+                    # Convert tests_status format to the format expected by validate_evaluation_results
+                    # tests_status format: {FAIL_TO_PASS: {success: [...], failure: [...]}, PASS_TO_PASS: {...}}
+                    # Expected format: {test_name: {status: "PASS"/"FAIL"}}
+                    test_results = {}
+                    for test_category in ["FAIL_TO_PASS", "PASS_TO_PASS"]:
+                        if test_category in tests_status:
+                            category_results = tests_status[test_category]
+                            # Add successful tests
+                            for test_name in category_results.get("success", []):
+                                test_results[test_name] = {"status": "PASS"}
+                            # Add failed tests
+                            for test_name in category_results.get("failure", []):
+                                test_results[test_name] = {"status": "FAIL"}
+                else:
+                    # Fallback: call get_eval_report if report.json doesn't exist
+                    eval_report = get_eval_report(
+                        test_spec=test_spec,
+                        prediction=eval_prediction,
+                        test_log_path=test_log_path,
+                        include_tests_status=True,
+                    )
+                    # get_eval_report returns: {instance_id: {tests_status: {...}}}
+                    instance_report = eval_report.get(instance_id, {})
+                    tests_status = instance_report.get("tests_status", {})
+                    # Convert to expected format
+                    test_results = {}
+                    for test_category in ["FAIL_TO_PASS", "PASS_TO_PASS"]:
+                        if test_category in tests_status:
+                            category_results = tests_status[test_category]
+                            for test_name in category_results.get("success", []):
+                                test_results[test_name] = {"status": "PASS"}
+                            for test_name in category_results.get("failure", []):
+                                test_results[test_name] = {"status": "FAIL"}
                 
                 # Check if all tests have UNKNOWN status (indicates tests didn't run)
                 if test_results:
