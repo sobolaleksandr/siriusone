@@ -1,0 +1,98 @@
+name: Validate Data Points
+
+on:
+  push:
+    paths:
+      - 'data_points/**'
+  pull_request:
+    paths:
+      - 'data_points/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for changed files detection
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install UV
+        run: |
+          pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv sync
+
+      - name: Detect changed files
+        id: changed-files
+        run: |
+          # Detect changed JSON files in data_points/ directory
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For PRs, compare against base branch
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.sha }}"
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRTUXB $BASE_SHA $HEAD_SHA | grep '^data_points/.*\.json$' || true)
+          else
+            # For pushes, compare against previous commit (if exists)
+            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+              CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD~1 HEAD | grep '^data_points/.*\.json$' || true)
+            else
+              # First commit - check all files in data_points/
+              CHANGED_FILES=$(find data_points -name "*.json" 2>/dev/null || true)
+            fi
+          fi
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No changed JSON files found in data_points/"
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "files=" >> $GITHUB_OUTPUT
+          else
+            echo "Found changed files:"
+            echo "$CHANGED_FILES"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            # Convert newlines to spaces and quote each file
+            FILES_QUOTED=$(echo "$CHANGED_FILES" | tr '\n' ' ' | sed 's/ $//')
+            echo "files=$FILES_QUOTED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate data points
+        id: validate
+        if: steps.changed-files.outputs.changed == 'true'
+        run: |
+          CHANGED_FILES="${{ steps.changed-files.outputs.files }}"
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No files to validate"
+            exit 0
+          fi
+          
+          # Run validator on changed files
+          echo "Validating changed data points..."
+          uv run python -m swe_bench_validator $CHANGED_FILES --verbose || VALIDATION_EXIT_CODE=$?
+          
+          # Exit code will be non-zero if validation fails
+          exit ${VALIDATION_EXIT_CODE:-0}
+
+      - name: Report validation results
+        if: always() && steps.changed-files.outputs.changed == 'true'
+        run: |
+          if [ "${{ steps.validate.outcome }}" = "success" ]; then
+            echo "✅ All data points validated successfully!"
+          else
+            echo "❌ Validation failed. Please check the logs above for details."
+            echo ""
+            echo "Common issues:"
+            echo "- Patch fails to apply to the repository"
+            echo "- FAIL_TO_PASS tests still fail after applying the patch"
+            echo "- PASS_TO_PASS tests break after applying the patch"
+            echo "- Docker evaluation errors"
+          fi
+
