@@ -1,2 +1,0 @@
-[console_scripts]
-swe-bench-validator = swe_bench_validator.cli:main

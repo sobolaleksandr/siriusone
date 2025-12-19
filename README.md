@@ -218,7 +218,7 @@ uv run python -m swe_bench_validator data_points/astropy__astropy-11693.json --v
    # Option B: Install SWE-bench globally and use specific Python
    git clone https://github.com/princeton-nlp/SWE-bench.git
    cd SWE-bench
-   python3.11 -m pip install --user -e .  # Installs to user site-packages
+   python3.11 -m pip install --user -e .
    
    # Use the Python that has SWE-bench installed
    # Note: astropy__astropy-11693 is in the "test" split
@@ -282,7 +282,7 @@ uv run python -m swe_bench_validator data_points/astropy__astropy-11693.json --v
    - Validator will provide clear error messages ✅
    - This demonstrates the validator is working correctly
 
-**For CI/GitHub Actions**: Instance images must be pre-built and published to a registry. See [INSTANCE_IMAGE_SOLUTION.md](INSTANCE_IMAGE_SOLUTION.md) for details.
+**For CI/GitHub Actions**: Instance images can be pre-built and published to a registry (e.g., Docker Hub) for faster runs. Set `DOCKER_NAMESPACE` environment variable to use pre-built images.
 
 ## Data Point Format
 
@@ -358,15 +358,15 @@ uv run python -m swe_bench_validator data_points/astropy__astropy-11693-fail.jso
 ├── data_points/                      # Data point JSON files
 │   ├── astropy__astropy-11693.json      # Valid example
 │   └── astropy__astropy-11693-fail.json # Invalid example
-├── swe_bench_downloader/            # Data downloader module
 ├── swe_bench_validator/              # Validator module
 │   ├── __init__.py
 │   ├── __main__.py
 │   ├── cli.py                        # CLI interface
 │   ├── config.py                     # Configuration
 │   └── validator.py                  # Core validation logic
-├── scripts/
-│   └── download_swe_bench.sh         # Downloader script
+├── .github/
+│   └── workflows/
+│       └── validate-datapoints.yml   # GitHub Actions workflow
 ├── swe-bench-docker-architecture.md  # Docker architecture docs
 ├── pyproject.toml                    # Project configuration
 └── README.md                         # This file
@@ -420,7 +420,7 @@ Default configuration can be customized:
 If you see `ImportError: cannot import name 'run_evaluation'`:
 1. Check your SWE-bench version: `pip show swebench`
 2. The validator tries to auto-detect the correct function name
-3. Run the diagnostic script: `python scripts/check_swebench_api.py`
+3. Check SWE-bench installation and API compatibility
 4. Update SWE-bench if needed: `pip install --upgrade swebench>=4.0.4`
 5. Check SWE-bench documentation for API changes
 
@@ -434,7 +434,7 @@ If you see Docker-related errors:
    - Verify Docker has enough resources (memory, disk space)
    - If you see "404 Not Found" for images, SWE-bench will build them from scratch
    - First run may take 10-30 minutes while building images
-   - Check `logs/run_evaluation/*/run_instance.log` for detailed error messages
+   - Check validation logs in the log directory for detailed error messages
 
 2. **Common Docker Errors**:
    - `ImageNotFound`: SWE-bench will attempt to build the image locally
