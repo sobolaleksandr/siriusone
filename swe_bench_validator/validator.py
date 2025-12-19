@@ -66,14 +66,18 @@ try:
         load_swebench_dataset,
         make_test_spec,
         RUN_EVALUATION_LOG_DIR,
+        build_env_images,
     )
     from swebench.harness.grading import get_eval_report
+    import docker
 except ImportError:
     SWEbenchInstance = None
     load_swebench_dataset = None
     get_eval_report = None
     make_test_spec = None
     RUN_EVALUATION_LOG_DIR = None
+    build_env_images = None
+    docker = None
 
 from .config import ValidatorConfig, DEFAULT_CONFIG
 
@@ -394,6 +398,35 @@ class DataPointValidator:
                     )
                 
                 instance = instances[0]
+                
+                # Try to build environment images first if they don't exist
+                # This ensures we have the base images needed for instance images
+                if build_env_images is not None and docker is not None:
+                    try:
+                        if self.config.verbose:
+                            console.print(
+                                f"[cyan]Checking/building environment images for {data_point['repo']}...[/cyan]"
+                            )
+                        docker_client = docker.from_env()
+                        # Build environment images for the instances we need
+                        build_env_images(
+                            client=docker_client,
+                            dataset=[instance],
+                            force_rebuild=self.config.verbose,  # Only force rebuild in verbose mode
+                            max_workers=1,
+                        )
+                        if self.config.verbose:
+                            console.print(
+                                f"[green]✓ Environment images ready[/green]"
+                            )
+                    except Exception as build_error:
+                        # If environment image build fails, continue anyway
+                        # run_instances might still work or handle it
+                        if self.config.verbose:
+                            console.print(
+                                f"[yellow]Warning: Environment image build had issues: {build_error}[/yellow]"
+                            )
+                        # Continue - run_instances will try to build what it needs
                 
                 # Convert to prediction format
                 prediction_dict = self.convert_to_prediction_format(data_point)

@@ -11,6 +11,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 60  # Allow time for Docker image builds on first run
     
     steps:
       - name: Checkout repository
@@ -89,8 +90,14 @@ jobs:
           
           echo "Validating changed data points..."
           echo "Files to validate: $CHANGED_FILES"
+          echo ""
+          echo "ℹ️  Note: First run may take 20-40 minutes to build Docker images."
+          echo "   Subsequent runs will be faster as images are cached."
+          echo ""
           
           # Run validator
+          # Exit code 1 = validation failed (expected for invalid data points)
+          # Exit code 0 = validation passed (expected for valid data points)
           uv run python -m swe_bench_validator $CHANGED_FILES --verbose
 
       - name: Report validation results
@@ -98,16 +105,26 @@ jobs:
         run: |
           if [ "${{ steps.validate.outcome }}" = "success" ]; then
             echo "✅ All data points validated successfully!"
+            echo ""
+            echo "All tests passed. The data point is valid."
           else
             echo "❌ Validation failed. Please check the logs above for details."
             echo ""
-            echo "Common issues:"
-            echo "- Docker images need to be built (first run takes 10-30 minutes)"
-            echo "- Patch fails to apply to the repository"
-            echo "- FAIL_TO_PASS tests still fail after applying the patch"
-            echo "- PASS_TO_PASS tests break after applying the patch"
-            echo "- Docker evaluation errors"
+            echo "Possible reasons:"
             echo ""
-            echo "Note: If this is the first run, Docker images will be built automatically."
-            echo "This can take 10-30 minutes. Subsequent runs will be faster."
+            echo "1. Docker images not built yet (first run):"
+            echo "   - First run takes 20-40 minutes to build Docker images"
+            echo "   - This is expected SWE-bench behavior"
+            echo "   - Subsequent runs will be faster"
+            echo ""
+            echo "2. Invalid data point (expected failure):"
+            echo "   - Patch fails to apply to the repository"
+            echo "   - FAIL_TO_PASS tests still fail after applying the patch"
+            echo "   - PASS_TO_PASS tests break after applying the patch"
+            echo ""
+            echo "3. Docker evaluation errors:"
+            echo "   - Check Docker logs for details"
+            echo "   - Ensure sufficient resources (disk space, memory)"
+            echo ""
+            echo "Check the validation logs above for the specific error."
           fi
