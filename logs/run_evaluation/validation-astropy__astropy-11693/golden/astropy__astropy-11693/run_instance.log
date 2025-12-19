@@ -1,69 +1,69 @@
-2025-12-19 10:53:12,895 - INFO - Traceback (most recent call last):
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/client.py", line 275, in _raise_for_status
-    response.raise_for_status()
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/requests/models.py", line 1026, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http+docker://localhost/v1.51/images/swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693:latest/json
+2025-12-19 11:40:18,072 - INFO - Environment image sweb.env.py.x86_64.428468730904ff6b4232aa:latest found for astropy__astropy-11693
+Building instance image sweb.eval.x86_64.astropy__astropy-11693:latest for astropy__astropy-11693
+2025-12-19 11:41:20,988 - INFO - Creating container for astropy__astropy-11693...
+2025-12-19 11:41:21,027 - INFO - Container for astropy__astropy-11693 created: b84656bd0d727e2c2886704b42595292558bca3213948ef1992049e2c55072a7
+2025-12-19 11:41:21,177 - INFO - Container for astropy__astropy-11693 started: b84656bd0d727e2c2886704b42595292558bca3213948ef1992049e2c55072a7
+2025-12-19 11:41:21,178 - INFO - Intermediate patch for astropy__astropy-11693 written to logs/run_evaluation/validation-astropy__astropy-11693/golden/astropy__astropy-11693/patch.diff, now applying to container...
+2025-12-19 11:41:21,285 - INFO - >>>>> Applied Patch:
+Checking patch astropy/wcs/wcsapi/fitswcs.py...
+Applied patch astropy/wcs/wcsapi/fitswcs.py cleanly.
 
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/swebench/harness/docker_build.py", line 459, in build_container
-    client.images.get(test_spec.instance_image_key)
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/models/images.py", line 333, in get
-    return self.prepare_model(self.client.api.inspect_image(name))
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/utils/decorators.py", line 19, in wrapped
-    return f(self, resource_id, *args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/image.py", line 251, in inspect_image
-    return self._result(
-           ^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/client.py", line 281, in _result
-    self._raise_for_status(response)
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/client.py", line 277, in _raise_for_status
-    raise create_api_error_from_http_exception(e) from e
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/errors.py", line 39, in create_api_error_from_http_exception
-    raise cls(e, response=response, explanation=explanation) from e
-docker.errors.ImageNotFound: 404 Client Error for http+docker://localhost/v1.51/images/swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693:latest/json: Not Found ("No such image: swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693:latest")
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/client.py", line 275, in _raise_for_status
-    response.raise_for_status()
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/requests/models.py", line 1026, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 404 Client Error: Not Found for url: http+docker://localhost/v1.51/images/create?tag=latest&fromImage=swe-bench%2Fsweb.eval.x86_64.astropy_1776_astropy-11693
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/swebench/harness/docker_build.py", line 462, in build_container
-    client.images.pull(test_spec.instance_image_key)
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/models/images.py", line 464, in pull
-    pull_log = self.client.api.pull(
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/image.py", line 429, in pull
-    self._raise_for_status(response)
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/api/client.py", line 277, in _raise_for_status
-    raise create_api_error_from_http_exception(e) from e
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/docker/errors.py", line 39, in create_api_error_from_http_exception
-    raise cls(e, response=response, explanation=explanation) from e
-docker.errors.ImageNotFound: 404 Client Error for http+docker://localhost/v1.51/images/create?tag=latest&fromImage=swe-bench%2Fsweb.eval.x86_64.astropy_1776_astropy-11693: Not Found ("pull access denied for swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693, repository does not exist or may require 'docker login': denied: requested access to the resource is denied")
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/swebench/harness/run_evaluation.py", line 141, in run_instance
-    container = build_container(
-                ^^^^^^^^^^^^^^^^
-  File "/home/briv/Загрузки/siriusone/task-release-2025-07-29-115124 (2)/.venv/lib/python3.12/site-packages/swebench/harness/docker_build.py", line 464, in build_container
-    raise BuildImageError(test_spec.instance_id, str(e), logger) from e
-swebench.harness.docker_build.BuildImageError: Error building image astropy__astropy-11693: 404 Client Error for http+docker://localhost/v1.51/images/create?tag=latest&fromImage=swe-bench%2Fsweb.eval.x86_64.astropy_1776_astropy-11693: Not Found ("pull access denied for swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693, repository does not exist or may require 'docker login': denied: requested access to the resource is denied")
-Check (logs/run_evaluation/validation-astropy__astropy-11693/golden/astropy__astropy-11693/run_instance.log) for more information.
-
-2025-12-19 10:53:12,895 - INFO - Attempting to remove image swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693:latest...
-2025-12-19 10:53:12,897 - INFO - Image swe-bench/sweb.eval.x86_64.astropy_1776_astropy-11693:latest not found, removing has no effect.
+2025-12-19 11:41:21,628 - INFO - Git diff before:
+diff --git a/astropy/wcs/wcsapi/fitswcs.py b/astropy/wcs/wcsapi/fitswcs.py
+index a7539db6c1..0bbc8fb612 100644
+--- a/astropy/wcs/wcsapi/fitswcs.py
++++ b/astropy/wcs/wcsapi/fitswcs.py
+@@ -323,7 +323,17 @@ class FITSWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
+         return world[0] if self.world_n_dim == 1 else tuple(world)
+ 
+     def world_to_pixel_values(self, *world_arrays):
+-        pixel = self.all_world2pix(*world_arrays, 0)
++        # avoid circular import
++        from astropy.wcs.wcs import NoConvergence
++        try:
++            pixel = self.all_world2pix(*world_arrays, 0)
++        except NoConvergence as e:
++            warnings.warn(str(e))
++            # use best_solution contained in the exception and format the same
++            # way as all_world2pix does (using _array_converter)
++            pixel = self._array_converter(lambda *args: e.best_solution,
++                                         'input', *world_arrays, 0)
++
+         return pixel[0] if self.pixel_n_dim == 1 else tuple(pixel)
+ 
+     @property
+2025-12-19 11:41:21,628 - INFO - Eval script for astropy__astropy-11693 written to logs/run_evaluation/validation-astropy__astropy-11693/golden/astropy__astropy-11693/eval.sh; copying to container...
+2025-12-19 11:42:09,986 - INFO - Test runtime: 48.30 seconds
+2025-12-19 11:42:09,987 - INFO - Test output for astropy__astropy-11693 written to logs/run_evaluation/validation-astropy__astropy-11693/golden/astropy__astropy-11693/test_output.txt
+2025-12-19 11:42:10,028 - INFO - Git diff after:
+diff --git a/astropy/wcs/wcsapi/fitswcs.py b/astropy/wcs/wcsapi/fitswcs.py
+index a7539db6c1..0bbc8fb612 100644
+--- a/astropy/wcs/wcsapi/fitswcs.py
++++ b/astropy/wcs/wcsapi/fitswcs.py
+@@ -323,7 +323,17 @@ class FITSWCSAPIMixin(BaseLowLevelWCS, HighLevelWCSMixin):
+         return world[0] if self.world_n_dim == 1 else tuple(world)
+ 
+     def world_to_pixel_values(self, *world_arrays):
+-        pixel = self.all_world2pix(*world_arrays, 0)
++        # avoid circular import
++        from astropy.wcs.wcs import NoConvergence
++        try:
++            pixel = self.all_world2pix(*world_arrays, 0)
++        except NoConvergence as e:
++            warnings.warn(str(e))
++            # use best_solution contained in the exception and format the same
++            # way as all_world2pix does (using _array_converter)
++            pixel = self._array_converter(lambda *args: e.best_solution,
++                                         'input', *world_arrays, 0)
++
+         return pixel[0] if self.pixel_n_dim == 1 else tuple(pixel)
+ 
+     @property
+2025-12-19 11:42:10,028 - INFO - Grading answer for astropy__astropy-11693...
+2025-12-19 11:42:10,047 - INFO - report: {'astropy__astropy-11693': {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['astropy/wcs/wcsapi/tests/test_fitswcs.py::test_non_convergence_warning'], 'failure': []}, 'PASS_TO_PASS': {'success': ['astropy/wcs/wcsapi/tests/test_fitswcs.py::test_empty', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_simple_celestial', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[tai]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[tcb]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[tcg]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[tdb]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[tt]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[ut1]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[utc]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values[local]', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values_gps', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values_deprecated', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_values_time', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_high_precision', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_location_geodetic', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_location_geocentric', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_location_geocenter', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_location_missing', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_location_incomplete', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_location_unsupported', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_time_1d_unsupported_ctype', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_unrecognized_unit', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_distortion_correlations', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_custom_ctype_to_ucd_mappings', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_caching_components_and_classes', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_sub_wcsapi_attributes', 'astropy/wcs/wcsapi/tests/test_fitswcs.py::test_phys_type_polarization'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}}
+Result for astropy__astropy-11693: resolved: True
+2025-12-19 11:42:10,047 - INFO - Attempting to stop container sweb.eval.astropy__astropy-11693.validation-astropy__astropy-11693...
+2025-12-19 11:42:25,365 - INFO - Attempting to remove container sweb.eval.astropy__astropy-11693.validation-astropy__astropy-11693...
+2025-12-19 11:42:25,398 - INFO - Container sweb.eval.astropy__astropy-11693.validation-astropy__astropy-11693 removed.
+2025-12-19 11:42:25,398 - INFO - Attempting to remove image sweb.eval.x86_64.astropy__astropy-11693:latest...
+2025-12-19 11:42:25,402 - INFO - Image sweb.eval.x86_64.astropy__astropy-11693:latest removed.

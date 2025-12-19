@@ -155,29 +155,134 @@ gh pr create --title "Test: Invalid data point" --body "Testing validator with a
 
 ### Testing Locally Before Creating PRs
 
+**Important**: The validator uses `namespace=None` to build instance images locally. On the first run, instance images will be built automatically (takes 5-15 minutes per instance). Subsequent runs will be faster as images are cached.
+
 Before creating PRs, test locally:
 
 ```bash
-# Test valid data point
-uv run python -m swe_bench_validator data_points/astropy__astropy-11693.json --verbose
+# Test valid data point (uses Docker Hub image if DOCKER_NAMESPACE is set)
+DOCKER_NAMESPACE=sobolav uv run python -m swe_bench_validator data_points/astropy__astropy-11693.json --verbose
 
 # Test invalid data point
-uv run python -m swe_bench_validator data_points/astropy__astropy-11693-fail.json --verbose
+DOCKER_NAMESPACE=sobolav uv run python -m swe_bench_validator data_points/astropy__astropy-11693-fail.json --verbose
+
+# Or without Docker Hub (will build locally):
+uv run python -m swe_bench_validator data_points/astropy__astropy-11693.json --verbose
 ```
 
 ### Note on Instance Images
 
-**Important**: SWE-bench requires instance images to be pre-built and published to a Docker registry. For the test PRs:
+**Important**: The validator uses `namespace=None` to build instance images locally. This means:
 
-- **Environment images**: Will build automatically ✅
-- **Instance images**: Must be pre-built or available in registry ⚠️
+- **Environment images**: Will build automatically ✅ (both locally and in CI)
+- **Instance images**: Will build automatically on first run ✅ (takes 5-15 minutes per instance)
+- **Subsequent runs**: Will be faster as images are cached ✅
 
-If instance images aren't available, the validator will:
-- ✅ Build environment images successfully
-- ✅ Detect missing instance images
-- ✅ Provide clear error messages explaining the requirement
+**How it works**: When `namespace=None`, SWE-bench treats images as local and builds them automatically. The validator is configured to use this approach, so instance images will be built on first run without needing to pre-build them manually.
 
-This is expected SWE-bench behavior. See [INSTANCE_IMAGE_SOLUTION.md](INSTANCE_IMAGE_SOLUTION.md) for details on pre-building instance images if needed.
+**For local testing**, instance images will be built automatically on first run. However, if you want to pre-build them manually (optional):
+
+1. **Pre-build instance images** (optional, validator will build automatically):
+   ```bash
+   # Option A: Use project's virtual environment (recommended)
+   cd /path/to/your/project
+   
+   # Install SWE-bench in the project's virtual environment using UV
+   # First, clone SWE-bench repository (if not already cloned)
+   git clone https://github.com/princeton-nlp/SWE-bench.git
+   
+   # Install SWE-bench using UV (this project uses UV for package management)
+   uv pip install -e ./SWE-bench
+   
+   # Verify installation
+   .venv/bin/python -c "import swebench; print('SWE-bench installed successfully')"
+   
+   # Build instance image using the venv Python
+   # Note: astropy__astropy-11693 is in the "test" split
+   # This will take 5-15 minutes to build the instance image
+   # Use --namespace "" (empty) to build locally, or omit for default behavior
+   .venv/bin/python -m swebench.harness.prepare_images \
+     --dataset_name "princeton-nlp/SWE-bench" \
+     --split "test" \
+     --instance_ids astropy__astropy-11693 \
+     --max_workers 1 \
+     --force_rebuild False \
+     --tag latest \
+     --namespace ""
+   
+   # After building, verify the image exists
+   docker images | grep astropy-11693
+   ```
+   
+   ```bash
+   # Option B: Install SWE-bench globally and use specific Python
+   git clone https://github.com/princeton-nlp/SWE-bench.git
+   cd SWE-bench
+   python3.11 -m pip install --user -e .  # Installs to user site-packages
+   
+   # Use the Python that has SWE-bench installed
+   # Note: astropy__astropy-11693 is in the "test" split
+   # This will take 5-15 minutes to build the instance image
+   # Use --namespace "" (empty) to build locally
+   python3.11 -m swebench.harness.prepare_images \
+     --dataset_name "princeton-nlp/SWE-bench" \
+     --split "test" \
+     --instance_ids astropy__astropy-11693 \
+     --max_workers 1 \
+     --force_rebuild False \
+     --tag latest \
+     --namespace ""
+   ```
+   
+   **Important**: Always use the Python where SWE-bench is installed:
+   - ✅ `.venv/bin/python` (if installed in project venv)
+   - ✅ `python3.11` (if installed with `python3.11 -m pip install`)
+   - ❌ `/usr/bin/python` or `python3` (system Python, may not have SWE-bench)
+   
+   **Troubleshooting**: If you get `ModuleNotFoundError: No module named 'swebench'`:
+   ```bash
+   # Check which Python you're using
+   which python
+   python --version
+   
+   # Verify SWE-bench is installed in that Python
+   python -c "import swebench; print('SWE-bench found')"
+   
+   # If not found, install it:
+   python -m pip install -e /path/to/SWE-bench
+   ```
+   
+   **Alternative**: You can also build instance images programmatically:
+   ```python
+   from swebench.harness.docker_build import build_instance_image
+   from swebench.harness.test_spec.test_spec import make_test_spec
+   from swebench.harness.utils import load_swebench_dataset
+   import docker
+   import logging
+   
+   # Load instance
+   instances = load_swebench_dataset(
+       name='princeton-nlp/SWE-bench',
+       instance_ids=['astropy__astropy-11693']
+   )
+   instance = instances[0]
+   
+   # Create test spec
+   test_spec = make_test_spec(instance, namespace="")
+   
+   # Build instance image
+   client = docker.from_env()
+   logger = logging.getLogger(__name__)
+   build_instance_image(test_spec, client, logger, nocache=False)
+   ```
+
+2. **Use the validator to detect issues** (works without instance images):
+   - Validator will build environment images ✅
+   - Validator will detect missing instance images ✅
+   - Validator will provide clear error messages ✅
+   - This demonstrates the validator is working correctly
+
+**For CI/GitHub Actions**: Instance images must be pre-built and published to a registry. See [INSTANCE_IMAGE_SOLUTION.md](INSTANCE_IMAGE_SOLUTION.md) for details.
 
 ## Data Point Format
 
