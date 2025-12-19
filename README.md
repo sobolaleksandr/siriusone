@@ -97,6 +97,88 @@ The workflow:
 3. Reports results as status checks
 4. Provides detailed error messages for failures
 
+## Creating Test Pull Requests
+
+To demonstrate the validator working in GitHub Actions, create two test PRs:
+
+### PR #1: Valid Data Point (Should Pass)
+
+This PR adds a valid data point that passes all validation checks.
+
+```bash
+# Create a new branch for the valid data point PR
+git checkout -b test-valid-datapoint
+
+# Copy the valid data point (or create your own)
+cp data_points/astropy__astropy-11693.json data_points/test_valid.json
+
+# Commit and push
+git add data_points/test_valid.json
+git commit -m "Add valid test data point"
+git push origin test-valid-datapoint
+
+# Create PR on GitHub (or use GitHub CLI)
+gh pr create --title "Test: Valid data point" --body "Testing validator with a valid data point"
+```
+
+**Expected Result**: 
+- ✅ GitHub Actions workflow runs
+- ✅ Environment images build successfully (1-2 minutes)
+- ⚠️ Instance images may need to be pre-built (SWE-bench requirement)
+- ✅ Validator correctly detects and reports status
+
+### PR #2: Invalid Data Point (Should Fail)
+
+This PR adds an invalid data point that triggers validation failures.
+
+```bash
+# Create a new branch for the invalid data point PR
+git checkout -b test-invalid-datapoint
+
+# Copy the invalid data point (or create your own)
+cp data_points/astropy__astropy-11693-fail.json data_points/test_invalid.json
+
+# Commit and push
+git add data_points/test_invalid.json
+git commit -m "Add invalid test data point"
+git push origin test-invalid-datapoint
+
+# Create PR on GitHub (or use GitHub CLI)
+gh pr create --title "Test: Invalid data point" --body "Testing validator with an invalid data point"
+```
+
+**Expected Result**:
+- ✅ GitHub Actions workflow runs
+- ✅ Validator detects invalid patch
+- ❌ Validation fails with clear error messages
+- ✅ Status check shows red with detailed failure explanation
+
+### Testing Locally Before Creating PRs
+
+Before creating PRs, test locally:
+
+```bash
+# Test valid data point
+uv run python -m swe_bench_validator data_points/astropy__astropy-11693.json --verbose
+
+# Test invalid data point
+uv run python -m swe_bench_validator data_points/astropy__astropy-11693-fail.json --verbose
+```
+
+### Note on Instance Images
+
+**Important**: SWE-bench requires instance images to be pre-built and published to a Docker registry. For the test PRs:
+
+- **Environment images**: Will build automatically ✅
+- **Instance images**: Must be pre-built or available in registry ⚠️
+
+If instance images aren't available, the validator will:
+- ✅ Build environment images successfully
+- ✅ Detect missing instance images
+- ✅ Provide clear error messages explaining the requirement
+
+This is expected SWE-bench behavior. See [INSTANCE_IMAGE_SOLUTION.md](INSTANCE_IMAGE_SOLUTION.md) for details on pre-building instance images if needed.
+
 ## Data Point Format
 
 Each data point is a JSON file with the following required fields:
