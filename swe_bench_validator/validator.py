@@ -409,10 +409,12 @@ class DataPointValidator:
                             )
                         docker_client = docker.from_env()
                         # Build environment images for the instances we need
+                        # Use force_rebuild=False to only build if missing (faster)
+                        # The images will be built if they don't exist
                         build_env_images(
                             client=docker_client,
                             dataset=[instance],
-                            force_rebuild=self.config.verbose,  # Only force rebuild in verbose mode
+                            force_rebuild=False,  # Only build if missing
                             max_workers=1,
                         )
                         if self.config.verbose:
@@ -420,13 +422,20 @@ class DataPointValidator:
                                 f"[green]✓ Environment images ready[/green]"
                             )
                     except Exception as build_error:
-                        # If environment image build fails, continue anyway
+                        # If environment image build fails, log it but continue
                         # run_instances might still work or handle it
+                        error_msg = str(build_error)
                         if self.config.verbose:
                             console.print(
-                                f"[yellow]Warning: Environment image build had issues: {build_error}[/yellow]"
+                                f"[yellow]Warning: Environment image build had issues: {error_msg}[/yellow]"
                             )
                         # Continue - run_instances will try to build what it needs
+                        # Store error for later use in error messages
+                        env_build_error = error_msg
+                    else:
+                        env_build_error = None
+                else:
+                    env_build_error = None
                 
                 # Convert to prediction format
                 prediction_dict = self.convert_to_prediction_format(data_point)
