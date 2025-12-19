@@ -39,6 +39,13 @@ This project uses [UV](https://github.com/astral-sh/uv) for dependency managemen
    docker ps  # Should not error
    ```
 
+4. **Note on Docker Images**: 
+   SWE-bench will build Docker images on first run. This may take time and requires:
+   - Sufficient disk space (several GB)
+   - Network access to download base images (if available)
+   - If base images aren't available, SWE-bench will build them from scratch
+   - First validation run may take 10-30 minutes while images are built
+
 ## Usage
 
 ### Command-Line Validator
@@ -221,12 +228,31 @@ Default configuration can be customized:
 
 ## Troubleshooting
 
+### Import Errors
+
+If you see `ImportError: cannot import name 'run_evaluation'`:
+1. Check your SWE-bench version: `pip show swebench`
+2. The validator tries to auto-detect the correct function name
+3. Run the diagnostic script: `python scripts/check_swebench_api.py`
+4. Update SWE-bench if needed: `pip install --upgrade swebench>=4.0.4`
+5. Check SWE-bench documentation for API changes
+
 ### Docker Issues
 
 If you see Docker-related errors:
-1. Ensure Docker is running: `docker ps`
-2. Check Docker permissions
-3. Verify Docker has enough resources (memory, disk space)
+
+1. **Image Build/Pull Failures**:
+   - Ensure Docker is running: `docker ps`
+   - Check Docker permissions (you may need to be in `docker` group)
+   - Verify Docker has enough resources (memory, disk space)
+   - If you see "404 Not Found" for images, SWE-bench will build them from scratch
+   - First run may take 10-30 minutes while building images
+   - Check `logs/run_evaluation/*/run_instance.log` for detailed error messages
+
+2. **Common Docker Errors**:
+   - `ImageNotFound`: SWE-bench will attempt to build the image locally
+   - `pull access denied`: Images will be built from scratch (this is normal)
+   - `No space left on device`: Free up disk space or clean old Docker images
 
 ### Timeout Issues
 
